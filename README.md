@@ -32,4 +32,5 @@ That's it!
 ## How to uninstall
 
 Remove all files under the "ppsb" directory.
-Save ".data" directory if you want to keep all data.
+
+NOTE: Save ".data" directory if you want to keep all data.
