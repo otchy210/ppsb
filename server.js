@@ -389,7 +389,7 @@ var buildMatchStat = function(match) {
 		'current-game': match.data['current-game'],
 		'current-point-a': match.data['current-point-a'],
 		'current-point-b': match.data['current-point-b'],
-		'current-serve': match.data['current-serve'],
+		'won': match.data['won'],
 		'status': match.data['status']
 	};
 }
@@ -420,8 +420,9 @@ var handleAddPoint = function(player, match, matchStats) {
 	var stats = matchStats[data.id];
 	if (!stats) {
 		stats = [];
-		stats.push(buildMatchStat(match));
+		matchStats[data.id] = stats;
 	}
+	stats.push(buildMatchStat(match));
 	data['current-point-' + player] += 1;
 	var anotherPlayer = getAnotherPlayer(player);
 	var point = data['current-point-' + player];
@@ -451,7 +452,6 @@ var handleAddPoint = function(player, match, matchStats) {
 			break;
 		}
 	}
-	debug(games, matchWonBy);
 	if (matchWonBy) {
 		data['status'] = 'finished';
 		data['won'] = matchWonBy;
@@ -461,11 +461,20 @@ var handleAddPoint = function(player, match, matchStats) {
 	}
 	data['current-serve'] = getCurrentServe(data);
 	match.save();
-	stats.push(buildMatchStat(match));
 	return match;
 }
 
 var handleUndo = function(match, matchStats) {
+	var stats = matchStats[match.data.id];
+	if (!stats || stats.length == 0) {
+		return match;
+	}
+	var prevStats = stats.pop();
+	for (var k in prevStats) {
+		match.data[k] = prevStats[k];
+	}
+	match.data['current-serve'] = getCurrentServe(match.data);
+	match.save();
 	return match;
 }
 
@@ -492,7 +501,7 @@ require('http').createServer(function(req, res) {
 		};
 	};
 	var handleRequest = function() {
-		log(req.method, path);
+		debug(req.method, path);
 		if (mapping[path]) {
 			mapping[path].controller(buildContext());
 		} else if (isStatic(path)) {
