@@ -268,7 +268,10 @@ var handleMatchDisplay = function(context) {
 		error404(context.res);
 		return;
 	}
-	views['match-display'].write(context.res);
+	debug(match);
+	views['match-display'].write(context.res, {
+		match: match.data
+	});
 }
 
 // mapping

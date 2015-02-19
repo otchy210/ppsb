@@ -1,6 +1,21 @@
 <%- include('header.ejs') %>
+<body>
 
+<div class="container-fluid">
+	<div class="row">
+		<div class="col-xs-12">
+			<h1><%= match.title %></h1>
+		</div>
+	</div>
+</div>
 
+<footer class="footer">
+	<div class="container-fluid">
+		<a href="/match/judge/<%= match.id %>">I wanna be a judge of this match.</a>
+	</div>
+</footer>
 
 <%- include('commonjs.ejs') %>
-<%- include('footer.ejs') %>
+
+</body>
+</html>
