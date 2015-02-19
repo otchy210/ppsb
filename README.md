@@ -3,10 +3,11 @@ Ping pong scoreboard working with node.js
 
 ## How to install
 
-- install node.js
+### install node.js
+
 just do it
 
-- install pingpong-scoreboard
+### install pingpong-scoreboard
 
 	$ git clone https://github.com/Otchy210/ppsb.git
 
