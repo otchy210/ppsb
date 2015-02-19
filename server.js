@@ -2,10 +2,25 @@
 var PORT = 10080;
 var DEBUG = true;
 var VIEW_DIR = './view/'
+var STATIC_DIR = './static/'
+var DATA_DIR = './.data/'
 
 // requires
 var fs = require('fs');
 var ejs = require('ejs');
+var qs = require('querystring');
+
+// initialize
+(function() {
+	try {
+		var stats = fs.statSync(DATA_DIR);
+	} catch (e) {}
+	if (!!stats && stats.isFile()) throw DATA_DIR + ' must be directory.';
+	if (!!stats && stats.isDirectory()) return;
+	fs.mkdirSync(DATA_DIR);
+	fs.mkdirSync(DATA_DIR + 'match');
+	fs.mkdirSync(DATA_DIR + 'player');
+})();
 
 // common
 var log = function() {console.log.apply(console, arguments)};
@@ -23,8 +38,37 @@ String.prototype.endsWith = function(suffix) {
 };
 
 var isStatic = function(path) {
-	return path.match(/\.(html|css|js)$/);
+	return path.match(/\.(html|css|js|json)$/);
 }
+
+var isEmpty = function(str) {
+	return !str || str.length == 0;
+}
+
+var isValidInt = function(str) {
+	return str.match(/^[0-9]+$/);
+}
+
+var isValidPlayer = function(str) {
+	return str.match(/^[a-zA-Z0-9 _-]+$/);
+}
+
+// http response
+var return200 = function(res, text, type) {
+	var type = (type == undefined) ? 'text/html' : type;
+	res.writeHead(200, {
+		'Content-Type': type,
+		'Content-Length': Buffer.byteLength(text, 'utf8')
+	});
+	res.write(text);
+	res.end();
+}
+
+var redirect302 = function(res, location) {
+	res.writeHead(302, {'Location': location});
+	res.write('302 Found');
+	res.end();
+};
 
 var error404 = function(res) {
 	res.writeHead(404, {'Content-Type': 'text/plain'});
@@ -35,16 +79,6 @@ var error404 = function(res) {
 var error500 = function(res) {
 	res.writeHead(500, {'Content-Type': 'text/plain'});
 	res.write('500 Internal Server Error');
-	res.end();
-}
-
-var return200 = function(res, text, type) {
-	var type = (type == undefined) ? 'text/html' : type;
-	res.writeHead(200, {
-		'Content-Type': type,
-		'Content-Length': Buffer.byteLength(text, 'utf8')
-	});
-	res.write(text);
 	res.end();
 }
 
@@ -79,10 +113,28 @@ var views = (function(){
 	return views;
 })();
 
+// JsonFile
+var JsonFile = function(path, defaultData) {
+	var self = this;
+	self.path = DATA_DIR + path + '.json';
+	try {
+		self.data = JSON.parse(fs.readFileSync(self.path), 'utf8');
+	} catch (e) {
+		self.data = defaultData;
+	}
+	self.save = function() {
+		fs.writeFile(self.path, JSON.stringify(self.data), function(err) {
+			if (err) throw err;
+			debug('Save to ' + self.path);
+		});
+	};
+}
+
 // controllers
 var handleStatic = function(context) {
 	var res = context.res;
 	var path = context.path;
+	var dir = STATIC_DIR;
 	var type = (function() {
 		if (path.endsWith('.html')) {
 			return 'text/html';
@@ -93,8 +145,12 @@ var handleStatic = function(context) {
 		if (path.endsWith('.js')) {
 			return 'text/javascript';
 		}
+		if (path.endsWith('.json')) {
+			dir = DATA_DIR;
+			return 'application/json';
+		}
 	})();
-	fs.readFile('./static/' + path, 'utf8', function(err, text) {
+	fs.readFile(dir + path, 'utf8', function(err, text) {
 		if (err) {
 			log(err);
 			error404(res);
@@ -108,71 +164,140 @@ var handleIndex = function(context) {
 	views['index'].write(context.res);
 }
 
-var handlePlayer = function(context) {
-	views['player'].write(context.res, {name: 'HOGE HOGE'});
-	// playerView.write(context.res, {name: 'HOGE HOGE'});	
-};
+var handleMatchNew = function(context) {
+	var req = context.req;
+	var players = new JsonFile('player/list', []);
+	debug(players);
+	if (req.method === 'GET') {
+		views['match-edit'].write(context.res, {
+			errors: {},
+			params: {point: '11', deuce: '1', game: '1'},
+			players: JSON.stringify(players.data.map(function(player) {return player.name}))
+		});
+		return;
+	}
+	var errors = {};
+	var params = context.params;
+	var hasError = false;
+	['point', 'game', 'player-a', 'player-b'].forEach(function(key) {
+		if (isEmpty(params[key])) {
+			errors[key] = true;
+		}
+	});
+	['point', 'game'].forEach(function(key) {
+		if (!errors[key] && !isValidInt(params[key])) {
+			errors[key] = 'Invalid value.';
+		}
+	});
+	['player-a', 'player-b'].forEach(function(key) {
+		if (!errors[key] && !isValidPlayer(params[key])) {
+			errors[key] = 'Alphabets and digits are only allowed.';
+		}
+	});
+	if (Object.keys(errors).length > 0) {
+		views['match-edit'].write(context.res, {
+			errors: errors,
+			params: params,
+			players: JSON.stringify(players.data.map(function(player) {return player.name}))
+		});
+		return;
+	}
+	var matches = new JsonFile('match/list', []);
+	var aName = params['player-a'];
+	var bName = params['player-b'];
+	var match = {
+		id: matches.data.length + 1,
+		title: params['title'] ? params['title'] : params['player-a'] + ' vs. ' + params['player-b'],
+		point: params['point'],
+		duece: params['duece'] ? true : false,
+		game: params['game'],
+		'player-a': aName,
+		'player-b': bName,
+		status: 'pending'
+	};
+	matches.data.push({id: match.id, title: match.title});
+	matches.save();
+	(new JsonFile('match/' + match.id, match)).save();
+
+	var playerNames = {};
+	players.data.forEach(function(player) {
+		playerNames[player.name] = true;
+	});
+	var newPlayer = false;
+	[aName, bName].forEach(function(name) {
+		if(!playerNames[name]) {
+			var player = new JsonFile('player/' + name, {name: name});
+			player.save();
+			players.data.push(player.data);
+			newPlayer = true;
+		}
+	});
+	if (newPlayer) {
+		players.data.sort(function(left, right) {
+			var lName = left.name.toLowerCase();
+			var rName = right.name.toLowerCase();
+			if (lName > rName) return 1;
+			if (lName < rName) return -1;
+			return 0;
+		});
+		players.save();
+	}
+	redirect302(context.res, '/match/display/' + match.id + '/');
+}
+
+var handleMatchDisplay = function(context) {
+
+}
 
 // mapping
 var mapping = {
 	'/': {controller: handleIndex},
-	'/player/list/': {controller: handlePlayer}
+	'/match/new/': {controller: handleMatchNew}
 };
 
 // create server
 require('http').createServer(function(req, res) {
 	var path = req.url.split('?')[0];
-	var params = (function(url) {
-		var params = {};
-		var index = url.indexOf('?');
-		if (index < 0) {
-			return params;
+	var handleRequest = function() {
+		log(req.method, path);
+		if (mapping[path]) {
+			var context = {
+				req: req,
+				res: res,
+				path: path,
+				paths: path.split('/').filter(function(item) {return item.length > 0;}),
+				params: req.params
+			};
+			mapping[path].controller(context);
+		} else if (isStatic(path)) {
+			var context = {
+				req: req,
+				res: res,
+				path: path
+			};
+			handleStatic(context);
+		} else {
+			error404(res);
 		}
-		url.substr(index + 1).split('&').forEach(function(param) {
-			var index = param.indexOf('=');
-			if (index < 0) {
-				var key = param;
-				var value = '';
-			} else {
-				var key = param.substr(0, index);
-				var value = decodeURI(param.substr(index + 1));
-			}
-			if (params[key] == undefined) {
-				params[key] = value;
-			} else if (Array.isArray(params[key])) {
-				params[key].push(value);
-			} else {
-				var tmp = params[key];
-				var arr = [tmp, value];
-				params[key] = arr;
+	};
+	if (req.method == 'GET') {
+		var index = req.url.indexOf('?');
+		if (index >= 0) {
+			req.params = qs.parse(req.url.substr(index + 1));
+		}
+		handleRequest();
+	} else if (req.method == 'POST') {
+		var body = '';
+		req.on('data', function (data) {
+			body += data;
+			if (body.length > 1e6) { 
+				req.connection.destroy();
 			}
 		});
-		return params;
-	})(req.url);
-
-	log(req.method, path, params);
-
-	if (mapping[path]) {
-		var context = {
-			req: req,
-			res: res,
-			path: path,
-			params: params,
-			mapping: mapping[path]
-		};
-		debug(context);
-		context.mapping.controller(context);
-	} else if (isStatic(path)) {
-		var context = {
-			req: req,
-			res: res,
-			path: path,
-			params: params
-		};
-		debug(context);
-		handleStatic(context);
-	} else {
-		error404(res);
+		req.on('end', function () {
+			req.params = qs.parse(body);
+			handleRequest();
+		});
 	}
 }).listen(PORT);
 
@@ -194,19 +319,3 @@ log('Open urls listed below in your browser.');
 	log('http://' + ip + (PORT != 80 ? ':' + PORT : '') + '/');
 });
 log('Ctrl+C to stop this server.')
-
-/*
-
-var http = require('http');
-var url = require('url');
-var WSServer = require('websocket').server;
-
-var clientHtml = require('fs').readFileSync('client.html');
-
-var plainHttpServer = http.createServer(function(req, res) {
-	res.writeHead(200, { 'Content-Type': 'text/html'});
-	res.end(clientHtml);
-}).listen(PORT);
-
-var webSocketServer = new WSServer({httpServer: plainHttpServer});
-*/
