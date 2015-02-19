@@ -82,7 +82,7 @@ var views = (function(){
 // controllers
 var handleStatic = function(context) {
 	var res = context.res;
-	var path = (context.mapping !== undefined && context.mapping.path !== undefined) ? context.mapping.path : context.path;
+	var path = context.path;
 	var type = (function() {
 		if (path.endsWith('.html')) {
 			return 'text/html';
@@ -104,6 +104,10 @@ var handleStatic = function(context) {
 	});
 };
 
+var handleIndex = function(context) {
+	views['index'].write(context.res);
+}
+
 var handlePlayer = function(context) {
 	views['player'].write(context.res, {name: 'HOGE HOGE'});
 	// playerView.write(context.res, {name: 'HOGE HOGE'});	
@@ -111,7 +115,7 @@ var handlePlayer = function(context) {
 
 // mapping
 var mapping = {
-	'/': {controller: handleStatic, path: 'index.html'},
+	'/': {controller: handleIndex},
 	'/player/list/': {controller: handlePlayer}
 };
 
