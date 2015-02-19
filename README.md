@@ -10,15 +10,16 @@ just do it
 ### Install ping pong scoreboard
 
 	$ git clone https://github.com/Otchy210/ppsb.git
+	$ cd ./ppsb/
 
 OR
 
 	$ wget https://github.com/Otchy210/ppsb/archive/master.zip
-	$ unzip ppsb-master.zip
+	$ unzip master.zip
+	$ cd ./ppsb-master
 
 THEN
 
-	$ cd ./ppsb/
 	$ npm install ejs
 	$ npm install websocket
 
