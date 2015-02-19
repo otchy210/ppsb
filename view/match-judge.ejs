@@ -4,6 +4,10 @@
 
 <%- include('nav.ejs') %>
 
+<div class="warning-panel">
+	<div class="bg-warning text"></div>
+</div>
+
 <div class="container">
 	<% if (match.status === 'pending') { %>
 	<div class="page-header">
@@ -44,7 +48,7 @@
 	</div>
 	<div class="row judge-panel">
 		<div class="col-xs-12">
-			<div class="undo" id="undo">Undo</div>
+			<button class="btn btn-warning btn-block" id="undo">Undo</button>
 		</div>
 	</div>
 	<div class="row judge-panel">
@@ -71,24 +75,57 @@
 		</div>
 		<% } %>
 	</div>
+	<div class="row judge-panel">
+		<div class="col-xs-6">
+			<a href="/match/display/<%= match.id %>/" class="btn btn-primary btn-block">Show scoreboard</a>
+		</div>
+		<div class="col-xs-6">
+			<button class="btn btn-danger btn-block" id="cancel">Cancel this match</button>
+		</div>
+	</div>
 	<% } %>
 </div>
 
 <%- include('commonjs.ejs') %>
-<% if (match.status === 'ongoing') { %>
 <script>
+var $warning = $('.warning-panel');
+var warning = function(text) {
+	clearTimeout($warning.data('tid'));
+	$warning.removeClass('show').find('.text').text(text);
+	$warning.addClass('show');
+	var tid = setTimeout(function() {
+		$warning.removeClass('show');
+	}, 2000);
+	$warning.data('tid', tid);
+}
+<% if (match.status === 'ongoing') { %>
+var current = <%- currentMatch %>;
 var ws = new WebSocket('<%= wsUri %>');
 $('.score').on('click', function() {
+	if (current.status === 'finished' || current.status === 'cancelled') {
+		warning('This match was ' + current.status + '.');
+		return;
+	}
 	ws.send(JSON.stringify({
 		id: <%= match.id %>,
 		action: 'add',
 		player: $(this).data('player')
 	}));
 });
-$('.undo').on('click', function() {
+$('#undo').on('click', function() {
 	ws.send(JSON.stringify({
 		id: <%= match.id %>,
 		action: 'undo'
+	}));
+});
+$('#cancel').on('click', function() {
+	if (current.status === 'finished' || current.status === 'cancelled') {
+		warning('This match was ' + current.status + '.');
+		return;
+	}
+	ws.send(JSON.stringify({
+		id: <%= match.id %>,
+		action: 'cancel'
 	}));
 });
 ws.onmessage = function(event) {
@@ -109,8 +146,13 @@ ws.onmessage = function(event) {
 			$('#fixed-score-b-' + i).text(0).removeClass('won');
 		}
 	}
+	current = match;
 }
-</script>
+<% } else if (match.status === 'finished' || match.status === 'cancelled') { %>
+$('.score, #undo, #cancel').on('click', function() {
+	warning('This match was <%= match.status %>.');
+});
 <% } %>
+</script>
 </body>
 </html>

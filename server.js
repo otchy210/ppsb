@@ -363,7 +363,8 @@ var handleMatchJudge = function(context) {
 			params: {},
 			match: match.data,
 			matches: buildActiveMatches(),
-			wsUri: buildWsUri(context.req)
+			wsUri: buildWsUri(context.req),
+			currentMatch: JSON.stringify(match.data)
 		});
 		return;
 	}
@@ -509,6 +510,26 @@ var handleUndo = function(match, matchStats) {
 	return match;
 }
 
+var handleCancel = function(match, matchStats) {
+	var data = match.data;
+	if (data.status === 'finished' || data.status === 'cancelled') {
+		return match;
+	}
+	var stats = matchStats[data.id];
+	if (!stats) {
+		stats = [];
+		matchStats[data.id] = stats;
+	}
+	stats.push(buildMatchStat(match));
+
+	data.status = 'cancelled';
+
+	updateMatchList(match);
+	match.save();
+
+	return match;
+}
+
 // mapping
 var mapping = {
 	'/': {controller: handleIndex},
@@ -589,6 +610,9 @@ wsServer.on('connection', function(socket) {
 				break;
 			case 'undo':
 				match = handleUndo(match, matchStats);
+				break;
+			case 'cancel':
+				match = handleCancel(match, matchStats);
 				break;
 		}
 		wsServer.clients.forEach(function(client){

@@ -2,6 +2,24 @@ body {
 	padding-top: 30px;
 }
 
+/* common */
+.warning-panel {
+	position: fixed;
+	margin-top: -50px;
+	opacity: 0.5;
+	width: 100%;
+	z-index: 9;
+	transition: all 0.5s;
+}
+.warning-panel > div {
+	padding: 10px 15px;
+}
+.warning-panel.show {
+	margin-top: 20px;
+	transition: all 0.5s;
+	opacity: 1;
+}
+
 /* match */
 body.match {
 	padding-top: 0;
@@ -304,7 +322,7 @@ body.match footer a.waiting {
 /* judge */
 .judge-panel {
 	position: relative;
-	margin-top: 20px;
+	margin-top: 15px;
 }
 .judge-panel .player {
 	text-align: center;
@@ -346,26 +364,6 @@ body.match footer a.waiting {
 .judge-panel .fixed-score.won {
 	border-color: #090;
 	background-color: #cfc;
-}
-.judge-panel .undo {
-	text-align: center;
-	font-size: 20px;
-	border: solid 1px #c00;
-	border-radius: 4px;
-	background-color: #fee;
-	color: #c00;
-	cursor: pointer;
-	-webkit-user-select: none;
-	-moz-user-select: none;
-	user-select: none;
-}
-.judge-panel .undo:hover {
-	box-shadow: 0 0 1px #c00;
-}
-.judge-panel .undo:active {
-	box-shadow: 0 0 1px #c00, 0 1px 2px #c66 inset;
-	padding-top: 1px;
-	margin-bottom: -1px;
 }
 
 /* anime */
