@@ -301,3 +301,55 @@ body.match footer a.waiting {
 	}
 }
 
+/* judge */
+.judge-panel {
+	position: relative;
+	margin-top: 20px;
+}
+.judge-panel .player {
+	text-align: center;
+}
+.judge-panel .score {
+	font-size: 80px;
+	border: solid 1px #999;
+	border-radius: 4px;
+	cursor: pointer;
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	user-select: none;
+}
+.judge-panel .score:hover {
+	box-shadow: 0 0 1px #999;
+}
+.judge-panel .score:active {
+	box-shadow: 0 0 1px #999, 0 1px 2px #999 inset;
+	padding-top: 1px;
+	margin-bottom: -1px;
+}
+.judge-panel .current-game {
+	text-align: center;
+}
+.judge-panel .current-game > div {
+	font-size: 40px;
+	line-height: 80px;
+}
+.judge-panel .undo {
+	text-align: center;
+	font-size: 20px;
+	border: solid 1px #c00;
+	border-radius: 4px;
+	background-color: #fee;
+	color: #c00;
+	cursor: pointer;
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	user-select: none;
+}
+.judge-panel .undo:hover {
+	box-shadow: 0 0 1px #c00;
+}
+.judge-panel .undo:active {
+	box-shadow: 0 0 1px #c00, 0 1px 2px #c66 inset;
+	padding-top: 1px;
+	margin-bottom: -1px;
+}

@@ -5,10 +5,10 @@
 <%- include('nav.ejs') %>
 
 <div class="container">
+	<% if (match.status === 'pending') { %>
 	<div class="page-header">
 		<h1><%= match.title %></h1>
 	</div>
-	<% if (match.status === 'pending') { %>
 	<form action="/match/judge/<%= match.id %>/" method="POST" class="form-horizontal">
 		<div class="form-group<% if (errors['serve']) {%> has-error<%}%>">
 			<label class="col-sm-2 control-label">First serve (required)</label>
@@ -27,12 +27,77 @@
 			</div>
 		</div>
 	</form>
+	<% } else if (match.status === 'ongoing') { %>
+	<div class="row judge-panel">
+		<div class="col-xs-5 player">
+			<h3><%= match['player-a'] %></h3>
+			<div class="score" data-player="a" id="current-point-a"><%= match['current-point-a'] %></div>
+		</div>
+		<div class="col-xs-2 current-game">
+			<h3>Game</h3>
+			<div><%= match['current-game'] %></div>
+		</div>
+		<div class="col-xs-5 player">
+			<h3><%= match['player-b'] %></h3>
+			<div class="score" data-player="b" id="current-point-b"><%= match['current-point-b'] %></div>
+		</div>
+	</div>
+	<div class="row judge-panel">
+		<div class="col-xs-12">
+			<div class="undo" id="undo">Undo</div>
+		</div>
+	</div>
+	<div class="row judge-panel">
+		<div class="col-xs-2">
+			<div><%= match['player-a'] %></div>
+		</div>
+		<% for (var i=0; i<(match.game*2-1); i++) { %>
+		<div class="col-xs-1">
+			<div>0</div>
+		</div>
+		<% } %>
+	</div>
+	<div class="row judge-panel">
+		<div class="col-xs-2">
+			<div><%= match['player-b'] %></div>
+		</div>
+		<% for (var i=0; i<(match.game*2-1); i++) { %>
+		<div class="col-xs-1">
+			<div>0</div>
+		</div>
+		<% } %>
+	</div>
 	<% } %>
 </div>
 
 <%- include('commonjs.ejs') %>
+<% if (match.status === 'ongoing') { %>
 <script>
+var ws = new WebSocket('<%= wsUri %>');
+$('.score').on('click', function() {
+	ws.send(JSON.stringify({
+		id: <%= match.id %>,
+		action: 'add',
+		player: $(this).data('player')
+	}));
+});
+$('.undo').on('click', function() {
+	ws.send(JSON.stringify({
+		id: <%= match.id %>,
+		action: 'undo'
+	}));
+});
+var $currentPointA = $('#current-point-a');
+var $currentPointB = $('#current-point-b');
+ws.onmessage = function(event) {
+	var match = JSON.parse(event.data);
+	if (match.id !== <%= match.id %>) {
+		return;
+	}
+	$currentPointA.text(match['current-point-a']);
+	$currentPointB.text(match['current-point-b']);
+}
 </script>
-
+<% } %>
 </body>
 </html>

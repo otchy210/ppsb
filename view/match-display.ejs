@@ -13,7 +13,7 @@
 	<div class="row">
 		<div class="col-xs-4 player">
 			<h2><%= match['player-a'] %></h2>
-			<div class="score"><%- currentPointA %></div>
+			<div class="score" id="current-point-a"><%- currentPointA %></div>
 		</div>
 		<div class="col-xs-4 game">
 			<div>
@@ -24,7 +24,7 @@
 		</div>
 		<div class="col-xs-4 player">
 			<h2><%= match['player-b'] %></h2>
-			<div class="score"><%- currentPointB %></div>
+			<div class="score" id="current-point-b"><%- currentPointB %></div>
 		</div>
 	</div>
 	<% for (var i=0; i<(match.game*2-1); i++) { %>
@@ -53,6 +53,17 @@
 
 <%- include('commonjs.ejs') %>
 <script>
+var ws = new WebSocket('<%= wsUri %>');
+var $currentPointA = $('#current-point-a');
+var $currentPointB = $('#current-point-b');
+ws.onmessage = function(event) {
+	var match = JSON.parse(event.data);
+	if (match.id !== <%= match.id %>) {
+		return;
+	}
+	$currentPointA.html(formatPoint(match['current-point-a']));
+	$currentPointB.html(formatPoint(match['current-point-b']));
+}
 </script>
 
 </body>

@@ -67,6 +67,8 @@ var formatDate = function(date) {
 	return str;
 }
 
+var common = require('./static/js/common.js');
+
 // http response
 var return200 = function(res, text, type) {
 	var type = (type == undefined) ? 'text/html' : type;
@@ -145,6 +147,26 @@ var JsonFile = function(path, defaultData) {
 	self.hasData = function() {
 		return !!self.data;
 	};
+}
+
+// utils
+var buildActiveMatches = function() {
+	var matches = new JsonFile('match/list', []);
+	var actives = [];
+	for (var i = matches.data.length - 1; i >= 0; i--) {
+		var match = matches.data[i];
+		if (match.status == undefined || match.status == 'pending') {
+			actives.push(match);
+		}
+	}
+	return actives;
+}
+
+var buildWsUri = function(req) {
+	var host = req.headers.host;
+	var index = host.indexOf(':');
+	host = (index >= 0) ? host.substr(0, index) : host;
+	return 'ws://' + host + ':' + WS_PORT + '/';
 }
 
 // controllers
@@ -284,15 +306,6 @@ var getMatchData = function(context) {
 	return match;
 }
 
-var formatPoint = function(point) {
-	var str = '';
-	if (point < 10) {
-		str += '<span class="dark">0</span>';
-	}
-	str += point;
-	return str;
-}
-
 var handleMatchDisplay = function(context) {
 	var match = getMatchData(context);
 	if (!match) return;
@@ -305,9 +318,10 @@ var handleMatchDisplay = function(context) {
 	})();
 	views['match-display'].write(context.res, {
 		match: match.data,
-		currentPointA: formatPoint(match.data['current-point-a']),
-		currentPointB: formatPoint(match.data['current-point-b']),
-		subtitle: subtitle
+		currentPointA: common.formatPoint(match.data['current-point-a']),
+		currentPointB: common.formatPoint(match.data['current-point-b']),
+		subtitle: subtitle,
+		wsUri: buildWsUri(context.req)
 	});
 }
 
@@ -321,7 +335,8 @@ var handleMatchJudge = function(context) {
 			errors: {},
 			params: {},
 			match: match.data,
-			matches: buildActiveMatches()
+			matches: buildActiveMatches(),
+			wsUri: buildWsUri(context.req)
 		});
 		return;
 	}
@@ -343,10 +358,45 @@ var handleMatchJudge = function(context) {
 	}
 	match.data['serve'] = params['serve'];
 	match.data['current-serve'] = params['serve'];
-	match.data['status'] = params['ongoing'];
+	match.data['status'] = 'ongoing';
 	match.data['started'] = (new Date()).getTime();
 	match.save();
 	redirect302(context.res, '/match/judge/' + match.data.id + '/');
+}
+
+var copyMatchResult = function(match) {
+	var result = [];
+	for (var i=0; i<match.data.result.length; i++) {
+		result.push(match.data.result[i]);
+	}
+	return result;
+}
+var buildMatchStat = function(match) {
+	return {
+		result: copyMatchResult(match),
+		'current-game': match['current-game'],
+		'current-point-a': match['current-point-a'],
+		'current-point-b': match['current-point-b'],
+		'current-serve': match['current-serve'],
+		'status': match['status']
+	};
+}
+
+var handleAddPoint = function(data, match, matchStats) {
+	var stats = matchStats[match.id];
+	if (!stats) {
+		stats = [];
+		stats.push(buildMatchStat(match));
+	}
+	var player = data.player;
+	match.data['current-point-' + player] += 1;
+	match.save();
+	stats.push(buildMatchStat(match));
+	return match;
+}
+
+var handleUndo = function(data, match, matchStats) {
+	
 }
 
 // mapping
@@ -357,19 +407,6 @@ var mapping = {
 var mappingStartsWith = {
 	'/match/display/': {controller: handleMatchDisplay},
 	'/match/judge/': {controller: handleMatchJudge},
-}
-
-// utils
-var buildActiveMatches = function() {
-	var matches = new JsonFile('match/list', []);
-	var actives = [];
-	for (var i = matches.data.length - 1; i >= 0; i--) {
-		var match = matches.data[i];
-		if (match.status == undefined || match.status == 'pending') {
-			actives.push(match);
-		}
-	}
-	return actives;
 }
 
 // create http server
@@ -423,15 +460,37 @@ require('http').createServer(function(req, res) {
 			handleRequest();
 		});
 	}
-}).listen(HTTP_PORT);
+}).listen(HTTP_PORT, function() {
+	log('HTTP server is running at port ' + HTTP_PORT);
+});
 
 // create ws server
-require('websocket.io').listen(WS_PORT).on('connection', function(socked) {
-
+var wsServer = require('websocket.io').listen(WS_PORT, function() {
+	log('WebSocket server is running at port ' + WS_PORT);
+});
+wsServer.on('connection', function(socket) {
+	var matchStats = {};
+	socket.on('message', function(data) {
+		var data = JSON.parse(data);
+		var match = new JsonFile('match/' + data.id);
+		switch (data.action) {
+			case 'add':
+				match = handleAddPoint(data, match, matchStats);
+				break;
+			case 'undo':
+				match = handleUndo(data, match, matchStats);
+				break;
+		}
+		wsServer.clients.forEach(function(client){
+			client.send(JSON.stringify(match.data));
+		});
+	});
 });
 
 // Let's start!
+log('---------------------------------------');
 log('Open urls listed below in your browser.');
+log('');
 (function() {
 	var interfaces = require('os').networkInterfaces();
 	var results = [];
@@ -447,4 +506,6 @@ log('Open urls listed below in your browser.');
 })().forEach(function(ip) {
 	log('http://' + ip + (HTTP_PORT != 80 ? ':' + HTTP_PORT : '') + '/');
 });
+log('');
 log('Ctrl+C to stop this server.')
+log('---------------------------------------');
