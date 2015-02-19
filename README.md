@@ -5,7 +5,7 @@ Ping pong scoreboard working with node.js
 
 ### Install node.js
 
-just do it
+Just do it.
 
 ### Install ping pong scoreboard
 
@@ -28,3 +28,7 @@ THEN
 	$ node server.js
 
 That's it!
+
+## How to uninstall
+
+Remove all files under the "ppsb" directory.
