@@ -313,6 +313,7 @@ body.match footer a.waiting {
 	font-size: 80px;
 	border: solid 1px #999;
 	border-radius: 4px;
+	font-family: monospace;
 	cursor: pointer;
 	-webkit-user-select: none;
 	-moz-user-select: none;
@@ -332,6 +333,16 @@ body.match footer a.waiting {
 .judge-panel .current-game > div {
 	font-size: 40px;
 	line-height: 80px;
+}
+.judge-panel .fixed-score {
+	border: solid 1px #999;
+	border-radius: 4px;
+	text-align: center;
+	font-family: monospace;
+}
+.judge-panel .fixed-score.won {
+	border-color: #090;
+	background-color: #cfc;
 }
 .judge-panel .undo {
 	text-align: center;

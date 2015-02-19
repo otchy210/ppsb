@@ -5,7 +5,7 @@
 <header class="container-fluid">
 	<div class="row">
 		<div class="col-xs-12">
-			<h1><%= match.title %> <small<% if (match.status === 'pending') { %> class="waiting"<% } %>><%= subtitle %></small></h1>
+			<h1><%= match.title %> <small id="subtitle"<% if (match.status === 'pending') { %> class="waiting"<% } %>><%= subtitle %></small></h1>
 		</div>
 	</div>
 </header>
@@ -17,9 +17,9 @@
 		</div>
 		<div class="col-xs-4 game">
 			<div>
-				<span class="serve left<% if (match['current-serve'] === 'a' ) { %> visible<% } %>"></span>
-				<span class="current-game"><%= match['current-game'] %></span>
-				<span class="serve right<% if (match['current-serve'] === 'b' ) { %> visible<% } %>"></span>
+				<span id="serve-a" class="serve left<% if (match['current-serve'] === 'a' ) { %> visible<% } %>"></span>
+				<span class="current-game" id="current-game"><%= match['current-game'] %></span>
+				<span id="serve-b" class="serve right<% if (match['current-serve'] === 'b' ) { %> visible<% } %>"></span>
 			</div>
 		</div>
 		<div class="col-xs-4 player">
@@ -29,40 +29,60 @@
 	</div>
 	<% for (var i=0; i<(match.game*2-1); i++) { %>
 	<div class="row">
-		<div class="col-xs-5 fixed-score left">
-			<span class="dark">00</span>
+		<div class="col-xs-5 fixed-score left" id="fixed-score-a-<%= i %>">
+			<% if (match.result.length > i) { %><%- formattedResult[i][0] %><% } else { %><span class="dark">00</span><% } %>
 		</div>
 		<div class="col-xs-2 fixed-game-wrapper">
 			<div>
-				<span class="won"></span>
+				<span class="won<% if (match.result.length > i && match.result[i].won === 'a') { %> visible<% } %>" id="fixed-won-a-<%= i %>"></span>
 				<span class="fixed-game"><%= (i+1) %></span>
-				<span class="won"></span>
+				<span class="won<% if (match.result.length > i && match.result[i].won === 'b') { %> visible<% } %>" id="fixed-won-b-<%= i %>"></span>
 			</div>
 		</div>
-		<div class="col-xs-5 fixed-score right">
-			<span class="dark">00</span>
+		<div class="col-xs-5 fixed-score right" id="fixed-score-b-<%= i %>">
+			<% if (match.result.length > i) { %><%- formattedResult[i][1] %><% } else { %><span class="dark">00</span><% } %>
 		</div>
 	</div>
 	<% } %>
 </article>
 <footer class="footer">
 	<div class="container-fluid">
-		<a href="/match/judge/<%= match.id %>/"<% if (match.status === 'pending') { %> class="waiting"<% } %>>I wanna be a judge of this match.</a>
+		<a href="/match/judge/<%= match.id %>/" id="judge-link"<% if (match.status === 'pending') { %> class="waiting"<% } %>>I wanna be a judge of this match.</a>
 	</div>
 </footer>
 
 <%- include('commonjs.ejs') %>
 <script>
 var ws = new WebSocket('<%= wsUri %>');
-var $currentPointA = $('#current-point-a');
-var $currentPointB = $('#current-point-b');
 ws.onmessage = function(event) {
 	var match = JSON.parse(event.data);
 	if (match.id !== <%= match.id %>) {
 		return;
 	}
-	$currentPointA.html(formatPoint(match['current-point-a']));
-	$currentPointB.html(formatPoint(match['current-point-b']));
+	if (match.started > 0) {
+		$('#subtitle').text(formatDate(new Date(match.started))).removeClass('waiting');
+	}
+	['current-point-a', 'current-point-b'].forEach(function(id) {
+		$('#' + id).html(formatPoint(match[id]));
+	});
+	$('#current-game').text(match['current-game']);
+	for (var i=0; i<(match.game*2-1); i++) {
+		$('#fixed-won-a-' + i).removeClass('visible');
+		$('#fixed-won-b-' + i).removeClass('visible');
+		if (match.result.length > i) {
+			$('#fixed-score-a-' + i).html(formatPoint(match.result[i].scores[0]));
+			$('#fixed-score-b-' + i).html(formatPoint(match.result[i].scores[1]));
+			$('#fixed-won-' + match.result[i].won + '-' + i).addClass('visible');
+		} else {
+			$('#fixed-score-a-' + i).html('<span class="dark">00</span>');
+			$('#fixed-score-b-' + i).html('<span class="dark">00</span>');
+		}
+	}
+	$('.serve').removeClass('visible');
+	$('#serve-' + match['current-serve']).addClass('visible');
+	if (match.status !== 'pending') {
+		$('#judge-link').removeClass('waiting');
+	}
 }
 </script>
 

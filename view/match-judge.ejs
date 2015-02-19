@@ -35,7 +35,7 @@
 		</div>
 		<div class="col-xs-2 current-game">
 			<h3>Game</h3>
-			<div><%= match['current-game'] %></div>
+			<div id="current-game"><%= match['current-game'] %></div>
 		</div>
 		<div class="col-xs-5 player">
 			<h3><%= match['player-b'] %></h3>
@@ -53,7 +53,9 @@
 		</div>
 		<% for (var i=0; i<(match.game*2-1); i++) { %>
 		<div class="col-xs-1">
-			<div>0</div>
+			<div class="fixed-score<% if (match.result.length > i && match.result[i].won === 'a') { %> won<% } %>" id="fixed-score-a-<%= i %>">
+				<% if (match.result.length > i) { %><%= match.result[i].scores[0] %><% } else { %>0<% } %>
+			</div>
 		</div>
 		<% } %>
 	</div>
@@ -63,7 +65,9 @@
 		</div>
 		<% for (var i=0; i<(match.game*2-1); i++) { %>
 		<div class="col-xs-1">
-			<div>0</div>
+			<div class="fixed-score<% if (match.result.length > i && match.result[i].won === 'b') { %> won<% } %>" id="fixed-score-b-<%= i %>">
+				<% if (match.result.length > i) { %><%= match.result[i].scores[1] %><% } else { %>0<% } %>
+			</div>
 		</div>
 		<% } %>
 	</div>
@@ -87,15 +91,24 @@ $('.undo').on('click', function() {
 		action: 'undo'
 	}));
 });
-var $currentPointA = $('#current-point-a');
-var $currentPointB = $('#current-point-b');
 ws.onmessage = function(event) {
 	var match = JSON.parse(event.data);
 	if (match.id !== <%= match.id %>) {
 		return;
 	}
-	$currentPointA.text(match['current-point-a']);
-	$currentPointB.text(match['current-point-b']);
+	['current-game', 'current-point-a', 'current-point-b'].forEach(function(id) {
+		$('#' + id).text(match[id]);
+	});
+	for (var i=0; i<(match.game*2-1); i++) {
+		if (match.result.length > i) {
+			$('#fixed-score-a-' + i).text(match.result[i].scores[0]).removeClass('won');
+			$('#fixed-score-b-' + i).text(match.result[i].scores[1]).removeClass('won');
+			$('#fixed-score-' + match.result[i].won + '-' + i).addClass('won');
+		} else {
+			$('#fixed-score-a-' + i).text(0).removeClass('won');
+			$('#fixed-score-b-' + i).text(0).removeClass('won');
+		}
+	}
 }
 </script>
 <% } %>

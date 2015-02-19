@@ -58,15 +58,6 @@ var isValidPlayer = function(str) {
 	return str.match(/^[a-zA-Z0-9_-]+$/);
 }
 
-var formatDate = function(date) {
-	str = date.getFullYear() + '-';
-	str += String('0' + (date.getMonth() + 1)).slice(-2) + '-';
-	str += String('0' + date.getDate() ).slice(-2) + ' ';
-	str += String('0' + date.getHours()).slice(-2) + ':';
-	str += String('0' + date.getMinutes()).slice(-2);
-	return str;
-}
-
 var common = require('./static/js/common.js');
 
 // http response
@@ -250,7 +241,7 @@ var handleMatchNew = function(context) {
 		id: matches.data.length + 1,
 		title: params['title'] ? params['title'] : params['player-a'] + ' vs. ' + params['player-b'],
 		point: parseInt(params['point']),
-		duece: params['deuce'] ? true : false,
+		deuce: params['deuce'] ? true : false,
 		game: parseInt(params['game']),
 		'player-a': aName,
 		'player-b': bName,
@@ -312,14 +303,23 @@ var handleMatchDisplay = function(context) {
 
 	var subtitle = (function() {
 		if (match.data['started']) {
-			return formatDate(new Date(match.data['started']));	
+			return common.formatDate(new Date(match.data['started']));	
 		}
 		return 'Waiting for judge';
 	})();
+	var formattedResult = [];
+	for (var i=0; i<match.data.result.length; i++) {
+		var result = match.data.result[i];
+		formattedResult.push([
+			common.formatPoint(match.data.result[i].scores[0]),
+			common.formatPoint(match.data.result[i].scores[1])
+		]);
+	}
 	views['match-display'].write(context.res, {
 		match: match.data,
 		currentPointA: common.formatPoint(match.data['current-point-a']),
 		currentPointB: common.formatPoint(match.data['current-point-b']),
+		formattedResult: formattedResult,
 		subtitle: subtitle,
 		wsUri: buildWsUri(context.req)
 	});
@@ -361,6 +361,15 @@ var handleMatchJudge = function(context) {
 	match.data['status'] = 'ongoing';
 	match.data['started'] = (new Date()).getTime();
 	match.save();
+
+	wsServer.clients.forEach(function(client) {
+		try {
+			client.send(JSON.stringify(match.data));
+		} catch (e) {
+			log(e);
+		}
+	});
+
 	redirect302(context.res, '/match/judge/' + match.data.id + '/');
 }
 
@@ -371,6 +380,7 @@ var copyMatchResult = function(match) {
 	}
 	return result;
 }
+
 var buildMatchStat = function(match) {
 	return {
 		result: copyMatchResult(match),
@@ -382,21 +392,53 @@ var buildMatchStat = function(match) {
 	};
 }
 
-var handleAddPoint = function(data, match, matchStats) {
+var getAnotherPlayer = function(player) {
+	return (player === 'a') ? 'b' : 'a';
+}
+
+var getCurrentServe = function(data) {
+	var firstServe = (data['current-game'] % 2 === 1) ? data['serve'] : getAnotherPlayer(data['serve']);
+	var pointA = data['current-point-a'];
+	var pointB = data['current-point-b'];
+	var totalPoints = pointA + pointB;
+	if (Math.min(pointA, pointB) >= data.point - 1) {
+		var reverse = (totalPoints % 2 === 1);
+	} else {
+		var alterPoints = (data['point'] == 11) ? 2 : 5;
+		var reverse = (Math.floor(totalPoints / alterPoints) % 2 === 1);
+	}
+	return reverse ? getAnotherPlayer(firstServe) : firstServe;
+}
+
+var handleAddPoint = function(player, match, matchStats) {
 	var stats = matchStats[match.id];
 	if (!stats) {
 		stats = [];
 		stats.push(buildMatchStat(match));
 	}
-	var player = data.player;
-	match.data['current-point-' + player] += 1;
+	var data = match.data;
+	data['current-point-' + player] += 1;
+	var anotherPlayer = getAnotherPlayer(player);
+	var point = data['current-point-' + player];
+	var anotherPoint = data['current-point-' + anotherPlayer];
+	if (point >= data.point && (!data.deuce || (point - anotherPoint) > 1)) {
+		var result = {
+			won: player,
+			scores: [data['current-point-a'], data['current-point-b']]
+		};
+		data.result.push(result);
+		data['current-point-a'] = 0;
+		data['current-point-b'] = 0;
+		data['current-game'] += 1;
+	}
+	data['current-serve'] = getCurrentServe(data);
 	match.save();
 	stats.push(buildMatchStat(match));
 	return match;
 }
 
-var handleUndo = function(data, match, matchStats) {
-	
+var handleUndo = function(match, matchStats) {
+	return match;
 }
 
 // mapping
@@ -475,10 +517,10 @@ wsServer.on('connection', function(socket) {
 		var match = new JsonFile('match/' + data.id);
 		switch (data.action) {
 			case 'add':
-				match = handleAddPoint(data, match, matchStats);
+				match = handleAddPoint(data.player, match, matchStats);
 				break;
 			case 'undo':
-				match = handleUndo(data, match, matchStats);
+				match = handleUndo(match, matchStats);
 				break;
 		}
 		wsServer.clients.forEach(function(client){

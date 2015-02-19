@@ -6,9 +6,18 @@ var formatPoint = function(point) {
 	str += point;
 	return str;
 }
+var formatDate = function(date) {
+	str = date.getFullYear() + '-';
+	str += String('0' + (date.getMonth() + 1)).slice(-2) + '-';
+	str += String('0' + date.getDate() ).slice(-2) + ' ';
+	str += String('0' + date.getHours()).slice(-2) + ':';
+	str += String('0' + date.getMinutes()).slice(-2);
+	return str;
+}
 // for node.js
-if (module) {
+if (typeof module !== 'undefined') {
 	module.exports = {
-		formatPoint: formatPoint
+		formatPoint: formatPoint,
+		formatDate: formatDate
 	};
 }
