@@ -161,18 +161,20 @@ var handleStatic = function(context) {
 };
 
 var handleIndex = function(context) {
-	views['index'].write(context.res);
+	views['index'].write(context.res, {
+		matches: buildActiveMatches()
+	});
 }
 
 var handleMatchNew = function(context) {
 	var req = context.req;
 	var players = new JsonFile('player/list', []);
-	debug(players);
 	if (req.method === 'GET') {
 		views['match-edit'].write(context.res, {
 			errors: {},
 			params: {point: '11', deuce: '1', game: '1'},
-			players: JSON.stringify(players.data.map(function(player) {return player.name}))
+			players: JSON.stringify(players.data.map(function(player) {return player.name})),
+			matches: buildActiveMatches()
 		});
 		return;
 	}
@@ -198,7 +200,8 @@ var handleMatchNew = function(context) {
 		views['match-edit'].write(context.res, {
 			errors: errors,
 			params: params,
-			players: JSON.stringify(players.data.map(function(player) {return player.name}))
+			players: JSON.stringify(players.data.map(function(player) {return player.name})),
+			matches: buildActiveMatches()
 		});
 		return;
 	}
@@ -213,6 +216,7 @@ var handleMatchNew = function(context) {
 		game: params['game'],
 		'player-a': aName,
 		'player-b': bName,
+		'created-at': (new Date()).getTime(),
 		status: 'pending'
 	};
 	matches.data.push({id: match.id, title: match.title});
@@ -254,6 +258,19 @@ var mapping = {
 	'/': {controller: handleIndex},
 	'/match/new/': {controller: handleMatchNew}
 };
+
+// utils
+var buildActiveMatches = function() {
+	var matches = new JsonFile('/match/list', []);
+	var actives = [];
+	for (var i = matches.data.length - 1; i >= 0; i--) {
+		var match = matches.data[i];
+		if (match.status == undefined || match.status == 'pending') {
+			actives.push(match);
+		}
+	}
+	return actives;
+}
 
 // create server
 require('http').createServer(function(req, res) {
