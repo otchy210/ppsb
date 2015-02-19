@@ -51,8 +51,22 @@
 	</div>
 </footer>
 
+<div class="anime swipe" id="anime-get-ready">
+	<div class="inner">
+		<div class="text">Get</div>
+		<div class="text">Ready</div>
+	</div>
+</div>
+
+<div class="anime spiral" id="anime-go">
+	<div class="inner">
+		<div class="text">Go!</div>
+	</div>
+</div>
+
 <%- include('commonjs.ejs') %>
 <script>
+var current = <%- currentMatch %>;
 var ws = new WebSocket('<%= wsUri %>');
 ws.onmessage = function(event) {
 	var match = JSON.parse(event.data);
@@ -83,6 +97,21 @@ ws.onmessage = function(event) {
 	if (match.status !== 'pending') {
 		$('#judge-link').removeClass('waiting');
 	}
+	if (current.status === 'pending' && match.status === 'ongoing') {
+		var $gr = $('#anime-get-ready');
+		var $go = $('#anime-go');
+		$gr.addClass('start');
+		setTimeout(function() {
+			$gr.removeClass('start');
+		}, 3000);
+		setTimeout(function() {
+			$go.addClass('start');
+		}, 2000);
+		setTimeout(function() {
+			$go.removeClass('start');
+		}, 5000);
+	}
+	current = match;
 }
 </script>
 

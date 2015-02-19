@@ -348,7 +348,8 @@ var handleMatchDisplay = function(context) {
 		currentPointB: common.formatPoint(match.data['current-point-b']),
 		formattedResult: formattedResult,
 		subtitle: subtitle,
-		wsUri: buildWsUri(context.req)
+		wsUri: buildWsUri(context.req),
+		currentMatch: JSON.stringify(match.data)
 	});
 }
 
