@@ -413,34 +413,52 @@ body.match footer a.waiting {
 	line-height: 300px;
 	transform: translateX(100%);
 }
-@-webkit-keyframes swipe-inner {
+@-webkit-keyframes swipe1-inner {
+	  0% {opacity: 0;}
+	 20% {opacity: 1;}
+	 80% {opacity: 1;}
+	100% {opacity: 0;}
+}
+@-webkit-keyframes swipe2-inner {
 	  0% {opacity: 0;}
 	 10% {opacity: 1;}
 	 90% {opacity: 1;}
 	100% {opacity: 0;}
 }
-@-webkit-keyframes swipe-text-1 {
+@-webkit-keyframes swipe1-text-1 {
+	  0% {transform: translateX(100%);}
+	 40% {transform: translateX(0);}
+	 60% {transform: translateX(0);}
+	100% {transform: translateX(-100%);}
+}
+@-webkit-keyframes swipe2-text-1 {
 	  0% {transform: translateX(100%);}
 	 20% {transform: translateX(0);}
 	 30% {transform: translateX(0);}
 	 50% {transform: translateX(-100%);}
 	100% {transform: translateX(-100%);}
 }
-@-webkit-keyframes swipe-text-2 {
+@-webkit-keyframes swipe2-text-2 {
 	  0% {transform: translateX(100%);}
 	 50% {transform: translateX(100%);}
 	 70% {transform: translateX(0);}
 	 80% {transform: translateX(0);}
 	100% {transform: translateX(-100%);}
 }
-.anime.swipe.start .inner {
-	-webkit-animation: swipe-inner 2s;
+.anime.swipe1.start .inner {
+	-webkit-animation: swipe1-inner 1s;
 }
-.anime.swipe.start .text:nth-child(1) {
-	-webkit-animation: swipe-text-1 2s;
+.anime.swipe1.start .text:nth-child(1) {
+	-webkit-animation: swipe1-text-1 1s;
 }
-.anime.swipe.start .text:nth-child(2) {
-	-webkit-animation: swipe-text-2 2s;
+.anime.swipe2.start .inner {
+	-webkit-animation: swipe2-inner 2s;
+}
+.anime.swipe2.start .text:nth-child(1) {
+	-webkit-animation: swipe2-text-1 2s;
+}
+.anime.swipe2.start .text:nth-child(2) {
+	-webkit-animation: swipe2-text-2 2s;
 }
 /* anime-spiral */
 .anime.spiral .inner {

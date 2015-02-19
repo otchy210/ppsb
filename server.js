@@ -162,7 +162,6 @@ var updateMatchList = function(match) {
 	if (list.data.length <= index) {
 		return;
 	}
-	debug(list.data, index, list.data[index]);
 	var item = list.data[index];
 	switch (data.status) {
 		case 'finished':

@@ -51,16 +51,22 @@
 	</div>
 </footer>
 
-<div class="anime swipe" id="anime-get-ready">
+<div class="anime swipe swipe1">
 	<div class="inner">
-		<div class="text">Get</div>
-		<div class="text">Ready</div>
+		<div class="text"></div>
 	</div>
 </div>
 
-<div class="anime spiral" id="anime-go">
+<div class="anime swipe swipe2">
 	<div class="inner">
-		<div class="text">Go!</div>
+		<div class="text"></div>
+		<div class="text"></div>
+	</div>
+</div>
+
+<div class="anime spiral">
+	<div class="inner">
+		<div class="text"></div>
 	</div>
 </div>
 
@@ -97,21 +103,92 @@ ws.onmessage = function(event) {
 	if (match.status !== 'pending') {
 		$('#judge-link').removeClass('waiting');
 	}
-	if (current.status === 'pending' && match.status === 'ongoing') {
-		var $gr = $('#anime-get-ready');
-		var $go = $('#anime-go');
-		$gr.addClass('start');
-		setTimeout(function() {
-			$gr.removeClass('start');
-		}, 3000);
-		setTimeout(function() {
-			$go.addClass('start');
-		}, 2000);
-		setTimeout(function() {
-			$go.removeClass('start');
-		}, 5000);
-	}
+	(function() {
+		if (current.status === 'pending' && match.status === 'ongoing') {
+			animeSwipe(['Get', 'Ready']);
+			setTimeout(function() {
+				animeSpiral('Go!');
+			}, 2000);
+			return;
+		}
+		var pointA = match['current-point-a'];
+		var pointB = match['current-point-b'];
+		if (pointA === pointB && pointA >= (match.point - 1)) {
+			var msg = (function() {
+				if (pointA > match.point + 4) {
+					var len = pointA - (match.point + 4);
+					var msgs = [];
+					for (var i = 0; i < len; i++) {
+						msgs.push('OMG!')
+					}
+					return msgs.join(' ');
+				} else if (pointA > match.point + 3) {
+					return 'Unbelievable!';
+				} else if (pointA > match.point + 2) {
+					return 'Crazy!';
+				} else if (pointA > match.point + 1) {
+					return 'Awesome!';
+				} else {
+					return 'Deuce!';
+				}
+			})();
+			animeSwipe([msg]);
+			return;
+		}
+		if (current.status === 'ongoing' && match.status === 'finished') {
+			animeSwipe(['The match', 'won by']);
+			setTimeout(function() {
+				animeSpiral(match['player-' + match.won] + '!!');
+			}, 2000);
+			return;
+		}
+		if (current['current-game'] < match['current-game']) {
+			var game = match.result.length;
+			var player = match.result[match.result.length - 1].won;
+			var name = match['player-' + player];
+			switch (game) {
+				case 1:
+					game = game + 'st';
+					break;
+				case 2:
+					game = game + 'nd';
+					break;
+				case 3:
+					game = game + 'rd';
+					break;
+				default:
+					game = game + 'th';
+			}
+			animeSwipe([name + ' got', game + ' game!']);
+		}
+	})();
+
 	current = match;
+}
+var animeSwipe = function(texts) {
+	var $animeSwipe = $('.anime.swipe' + texts.length);
+	clearTimeout($animeSwipe.data('tid'));
+	$animeSwipe.removeClass('start');
+	$animeSwipe.find('.text').empty();
+	for (var i=0; i<texts.length; i++) {
+		$animeSwipe.find('.text:nth-child(' + (i+1) + ')').text(texts[i]);
+	}
+	$animeSwipe.addClass('start');
+	var tid = setTimeout(function() {
+		$animeSwipe.removeClass('start');
+	}, texts.length * 1500);
+	$animeSwipe.data('tid', tid);
+}
+var $animeSpiral = $('.anime.spiral');
+var animeSpiral = function(text) {
+	clearTimeout($animeSpiral.data('tid'));
+	$animeSpiral.removeClass('start');
+	$animeSpiral.find('.text').text(text);
+	$animeSpiral.addClass('start');
+	var tid = setTimeout(function() {
+		$animeSpiral.removeClass('start');
+	}, 3000);
+	$animeSpiral.data('tid', tid);
 }
 </script>
 
