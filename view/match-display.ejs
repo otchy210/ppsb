@@ -1,17 +1,53 @@
 <%- include('header.ejs') %>
-<body>
 
-<div class="container-fluid">
+<body class="match">
+
+<header class="container-fluid">
 	<div class="row">
 		<div class="col-xs-12">
-			<h1><%= match.title %></h1>
+			<h1><%= match.title %> <small<% if (match.status === 'pending') { %> class="waiting"<% } %>><%= started %></small></h1>
 		</div>
 	</div>
-</div>
-
+</header>
+<article class="container-fluid board">
+	<div class="row">
+		<div class="col-xs-4 player">
+			<h2><%= match['player-a'] %></h2>
+			<div class="score"><span class="dark">0</span>0</div>
+		</div>
+		<div class="col-xs-4 game">
+			<div>
+				<span class="serve left"></span>
+				<span class="current-game<% if (match.status !== 'pending') {%> visible<% } %>"><%= match['current-game'] %></span>
+				<span class="serve right"></span>
+			</div>
+		</div>
+		<div class="col-xs-4 player">
+			<h2><%= match['player-b'] %></h2>
+			<div class="score"><span class="dark">0</span>0</div>
+		</div>
+	</div>
+	<% for (var i=0; i<(match.game*2-1); i++) { %>
+	<div class="row">
+		<div class="col-xs-5 fixed-score left">
+			<span class="dark">00</span>
+		</div>
+		<div class="col-xs-2 fixed-game-wrapper">
+			<div>
+				<span class="won"></span>
+				<span class="fixed-game"><%= (i+1) %></span>
+				<span class="won"></span>
+			</div>
+		</div>
+		<div class="col-xs-5 fixed-score right">
+			<span class="dark">00</span>
+		</div>
+	</div>
+	<% } %>
+</article>
 <footer class="footer">
 	<div class="container-fluid">
-		<a href="/match/judge/<%= match.id %>">I wanna be a judge of this match.</a>
+		<a href="/match/judge/<%= match.id %>"<% if (match.status === 'pending') { %> class="waiting"<% } %>>I wanna be a judge of this match.</a>
 	</div>
 </footer>
 

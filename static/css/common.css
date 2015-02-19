@@ -1,16 +1,269 @@
-body.with-nav {
+body {
 	padding-top: 30px;
 }
-footer {
+
+/* match */
+body.match {
+	padding-top: 0;
+	background: #111;
+}
+body.match header {
+	background: #999;
+	background: -mpz-linear-gradient(bottom,  #666 0%, #999 100%);
+	background: -webkit-linear-gradient(bottom,  #666 0%, #999 100%);
+	background: linear-gradient(to top,  #666 0%, #999 100%);
+}
+body.match header h1 {
+	color: #333;
+	margin: 0;
+	font-size: 36px;
+	line-height: 1.5em;
+	text-shadow: 0 0.5px 1px #ccc, 0 -0.5px 1px #333;
+}
+body.match header h1 small {
+	color: #333;
+	text-shadow: none;
+}
+body.match footer {
 	position: fixed;
 	bottom: 0;
 	width: 100%;
-	background: #eee;
+	background: #999;
+	background: -mpz-linear-gradient(bottom,  #666 0%, #999 100%);
+	background: -webkit-linear-gradient(bottom,  #666 0%, #999 100%);
+	background: linear-gradient(to top,  #666 0%, #999 100%);
 }
-footer a {
+body.match footer a {
 	display: block;
 	padding: 5px;
 	text-align: center;
 	font-size: 80%;
 	font-weight: bold;
+	color: #cc0;
 }
+@-webkit-keyframes waiting {
+	  0% {color: #333;}
+	 50% {color: #cc0;}
+	100% {color: #333;}
+}
+@keyframes waiting {
+	  0% {color: #333;}
+	 50% {color: #cc0;}
+	100% {color: #333;}
+}
+body.match header h1 small.waiting,
+body.match footer a {
+	-webkit-animation: waiting 2s infinite;
+	animation: waiting 2s infinite;
+}
+.board {
+	color: #fff;
+}
+.board * {
+	text-align: center;
+}
+.board .player h2 {
+	font-size: 60px;
+	margin: 0;
+	line-height: 80px;
+}
+.board .score {
+	font-size: 240px;
+	font-family: monospace;
+	line-height: 240px;
+	color: #f00;
+}
+.board .score .dark {
+	opacity: 0.2;
+}
+.board .game > div {
+	position: relative;
+	margin: 80px 0 0 0;
+}
+.board .game > div > * {
+	display: inline-block;
+}
+.board .serve {
+	position: absolute;
+	border-style: solid;
+	border-color: #ff0;
+	border-width: 12px 12px 0 0;
+	width: 80px;
+	height: 80px;
+	margin-top: 80px;
+	opacity: 0.1;
+}
+.board .serve.visible {
+	opacity: 1;
+}
+.board .serve.left {
+	left: 0;
+	transform: rotate(-135deg);
+}
+.board .serve.right {
+	right: 0;
+	transform: rotate(45deg);
+}
+.board .current-game {
+	font-size: 120px;
+	font-family: monospace;
+	color: #0c0;
+	line-height: 240px;
+	opacity: 0.2;
+}
+.board .current-game.visible {
+	opacity: 1;
+}
+.board .fixed-score {
+	font-size: 50px;
+	font-family: monospace;
+	line-height: 50px;
+	color: #ff0;
+}
+.board .fixed-score.left {
+	text-align: right;
+}
+.board .fixed-score.right {
+	text-align: left;
+}
+.board .fixed-score .dark {
+	opacity: 0.1;
+}
+.board .won {
+	display: inline-block;
+	width: 16px;
+	height: 16px;
+	background-color: #0c0;
+	transform: rotate(45deg);
+	opacity: 0.2;
+}
+.board .won.visible {
+	opacity: 1;
+}
+.board .fixed-game-wrapper {
+	padding: 0;
+}
+.board .fixed-game {
+	font-size: 40px;
+	font-family: monospace;
+	line-height: 50px;
+	color: #fff;
+}
+@media (max-width: 900px) {
+	.board .player h2 {
+		font-size: 50px;
+		line-height: 70px;
+	}
+	.board .game > div {
+		margin-top: 70px;
+	}
+	.board .score {
+		font-size: 160px;
+		line-height: 160px;
+	}
+	.board .current-game {
+		font-size: 80px;
+		line-height: 160px;
+	}
+	.board .serve {
+		border-width: 8px 8px 0 0;
+		width: 60px;
+		height: 60px;
+		margin-top: 50px;
+	}
+}
+@media (max-width: 700px) {
+	body.match header h1 {
+		font-size: 28px;
+	}
+	.board .player h2 {
+		font-size: 40px;
+		line-height: 50px;
+	}
+	.board .game > div {
+		margin-top: 50px;
+	}
+	.board .score {
+		font-size: 120px;
+		line-height: 120px;
+	}
+	.board .current-game {
+		font-size: 60px;
+		line-height: 120px;
+	}
+	.board .serve {
+		border-width: 6px 6px 0 0;
+		width: 40px;
+		height: 40px;
+		margin-top: 40px;
+	}
+}
+@media (max-width: 500px) {
+	body.match header h1 {
+		font-size: 16px;
+	}
+	.board .player h2 {
+		font-size: 24px;
+		line-height: 32px;
+	}
+	.board .game > div {
+		margin-top: 32px;
+	}
+	.board .score {
+		font-size: 80px;
+		line-height: 80px;
+	}
+	.board .current-game {
+		font-size: 40px;
+		line-height: 80px;
+	}
+	.board .serve {
+		border-width: 4px 4px 0 0;
+		width: 30px;
+		height: 30px;
+		margin-top: 25px;
+	}
+}
+@media (max-height: 700px) {
+	.board .fixed-score {
+		font-size: 32px;
+		line-height: 32px;
+	}	
+	.board .fixed-game {
+		font-size: 24px;
+		line-height: 32px;
+	}
+	.board .won {
+		width: 12px;
+		height: 12px;
+	}
+}
+@media (max-height: 500px) {
+	.board .fixed-score {
+		font-size: 24px;
+		line-height: 24px;
+	}	
+	.board .fixed-game {
+		font-size: 16px;
+		line-height: 24px;
+	}
+	.board .won {
+		width: 6px;
+		height: 6px;
+	}
+}
+@media (max-height: 350px) {
+	.board .fixed-score {
+		font-size: 16px;
+		line-height: 16px;
+	}	
+	.board .fixed-game {
+		font-size: 16px;
+		line-height: 16px;
+	}
+	.board .won {
+		width: 6px;
+		height: 6px;
+	}
+}
+

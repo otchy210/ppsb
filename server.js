@@ -57,6 +57,16 @@ var isValidPlayer = function(str) {
 	return str.match(/^[a-zA-Z0-9 _-]+$/);
 }
 
+var formatDate = function(date) {
+	str = date.getFullYear() + '-';
+	str += String('0' + (date.getMonth() + 1)).slice(-2) + '-';
+	str += String('0' + date.getDate() ).slice(-2) + ' ';
+	str += String('0' + date.getHours()).slice(-2) + ':';
+	str += String('0' + date.getMinutes()).slice(-2);
+	debug(str);
+	return str;
+}
+
 // http response
 var return200 = function(res, text, type) {
 	var type = (type == undefined) ? 'text/html' : type;
@@ -218,12 +228,14 @@ var handleMatchNew = function(context) {
 	var match = {
 		id: matches.data.length + 1,
 		title: params['title'] ? params['title'] : params['player-a'] + ' vs. ' + params['player-b'],
-		point: params['point'],
-		duece: params['duece'] ? true : false,
-		game: params['game'],
+		point: parseInt(params['point']),
+		duece: params['deuce'] ? true : false,
+		game: parseInt(params['game']),
 		'player-a': aName,
 		'player-b': bName,
-		'created-at': (new Date()).getTime(),
+		'created': (new Date()).getTime(),
+		result: [],
+		'current-game': 1,
 		status: 'pending'
 	};
 	matches.data.push({id: match.id, title: match.title});
@@ -268,9 +280,15 @@ var handleMatchDisplay = function(context) {
 		error404(context.res);
 		return;
 	}
-	debug(match);
+	var started = (function() {
+		if (match.data['started']) {
+			return formatDate(new Date(match.data['started']));	
+		}
+		return 'Waiting for judge';
+	})();
 	views['match-display'].write(context.res, {
-		match: match.data
+		match: match.data,
+		started: started
 	});
 }
 
@@ -285,7 +303,7 @@ var mappingStartsWith = {
 
 // utils
 var buildActiveMatches = function() {
-	var matches = new JsonFile('/match/list', []);
+	var matches = new JsonFile('match/list', []);
 	var actives = [];
 	for (var i = matches.data.length - 1; i >= 0; i--) {
 		var match = matches.data[i];
@@ -317,7 +335,6 @@ require('http').createServer(function(req, res) {
 		} else {
 			var found = false;
 			for (var k in mappingStartsWith) {
-				debug(k, path, path.startsWith(k));
 				if (path.startsWith(k)) {
 					mappingStartsWith[k].controller(buildContext());
 					found = true;
