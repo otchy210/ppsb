@@ -130,10 +130,12 @@ var JsonFile = function(path, defaultData) {
 		self.data = defaultData;
 	}
 	self.save = function() {
-		fs.writeFile(self.path, JSON.stringify(self.data), function(err) {
-			if (err) throw err;
+		try {
+			fs.writeFileSync(self.path, JSON.stringify(self.data));
 			debug('Save to ' + self.path);
-		});
+		} catch (e) {
+			log(e);
+		}
 	};
 	self.hasData = function() {
 		return !!self.data;
@@ -384,11 +386,11 @@ var copyMatchResult = function(match) {
 var buildMatchStat = function(match) {
 	return {
 		result: copyMatchResult(match),
-		'current-game': match['current-game'],
-		'current-point-a': match['current-point-a'],
-		'current-point-b': match['current-point-b'],
-		'current-serve': match['current-serve'],
-		'status': match['status']
+		'current-game': match.data['current-game'],
+		'current-point-a': match.data['current-point-a'],
+		'current-point-b': match.data['current-point-b'],
+		'current-serve': match.data['current-serve'],
+		'status': match.data['status']
 	};
 }
 
@@ -411,12 +413,15 @@ var getCurrentServe = function(data) {
 }
 
 var handleAddPoint = function(player, match, matchStats) {
-	var stats = matchStats[match.id];
+	var data = match.data;
+	if (data.status === 'finished') {
+		return match;
+	}
+	var stats = matchStats[data.id];
 	if (!stats) {
 		stats = [];
 		stats.push(buildMatchStat(match));
 	}
-	var data = match.data;
 	data['current-point-' + player] += 1;
 	var anotherPlayer = getAnotherPlayer(player);
 	var point = data['current-point-' + player];
@@ -430,6 +435,29 @@ var handleAddPoint = function(player, match, matchStats) {
 		data['current-point-a'] = 0;
 		data['current-point-b'] = 0;
 		data['current-game'] += 1;
+	}
+	var games = {};
+	var matchWonBy;
+	for (var i=0; i<data.result.length; i++) {
+		var result = data.result[i];
+		var p = result.won;
+		if (!games[p]) {
+			games[p] = 1;
+		} else {
+			games[p]++;
+		}
+		if (games[p] >= data.game) {
+			matchWonBy = p
+			break;
+		}
+	}
+	debug(games, matchWonBy);
+	if (matchWonBy) {
+		data['status'] = 'finished';
+		data['won'] = matchWonBy;
+		data['current-point-a'] = data.result[data.result.length - 1].scores[0];
+		data['current-point-b'] = data.result[data.result.length - 1].scores[1];
+		data['current-game'] -= 1;
 	}
 	data['current-serve'] = getCurrentServe(data);
 	match.save();
