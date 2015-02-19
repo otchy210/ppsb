@@ -1,5 +1,6 @@
 // globals
-var PORT = 10080;
+var HTTP_PORT = 10080;
+var WS_PORT = 10088;
 var DEBUG = true;
 var VIEW_DIR = './view/'
 var STATIC_DIR = './static/'
@@ -54,7 +55,7 @@ var isValidInt = function(str) {
 }
 
 var isValidPlayer = function(str) {
-	return str.match(/^[a-zA-Z0-9 _-]+$/);
+	return str.match(/^[a-zA-Z0-9_-]+$/);
 }
 
 var formatDate = function(date) {
@@ -63,7 +64,6 @@ var formatDate = function(date) {
 	str += String('0' + date.getDate() ).slice(-2) + ' ';
 	str += String('0' + date.getHours()).slice(-2) + ':';
 	str += String('0' + date.getMinutes()).slice(-2);
-	debug(str);
 	return str;
 }
 
@@ -175,7 +175,7 @@ var handleStatic = function(context) {
 		}
 		return200(res, text, type);
 	});
-};
+}
 
 var handleIndex = function(context) {
 	views['index'].write(context.res, {
@@ -197,7 +197,6 @@ var handleMatchNew = function(context) {
 	}
 	var errors = {};
 	var params = context.params;
-	var hasError = false;
 	['point', 'game', 'player-a', 'player-b'].forEach(function(key) {
 		if (isEmpty(params[key])) {
 			errors[key] = true;
@@ -236,6 +235,8 @@ var handleMatchNew = function(context) {
 		'created': (new Date()).getTime(),
 		result: [],
 		'current-game': 1,
+		'current-point-a': 0,
+		'current-point-b': 0,
 		status: 'pending'
 	};
 	matches.data.push({id: match.id, title: match.title});
@@ -268,7 +269,7 @@ var handleMatchNew = function(context) {
 	redirect302(context.res, '/match/display/' + match.id + '/');
 }
 
-var handleMatchDisplay = function(context) {
+var getMatchData = function(context) {
 	var paths = context.paths;
 	if (paths.length !== 3 || !isValidInt(paths[2])) {
 		error404(context.res);
@@ -280,7 +281,23 @@ var handleMatchDisplay = function(context) {
 		error404(context.res);
 		return;
 	}
-	var started = (function() {
+	return match;
+}
+
+var formatPoint = function(point) {
+	var str = '';
+	if (point < 10) {
+		str += '<span class="dark">0</span>';
+	}
+	str += point;
+	return str;
+}
+
+var handleMatchDisplay = function(context) {
+	var match = getMatchData(context);
+	if (!match) return;
+
+	var subtitle = (function() {
 		if (match.data['started']) {
 			return formatDate(new Date(match.data['started']));	
 		}
@@ -288,17 +305,58 @@ var handleMatchDisplay = function(context) {
 	})();
 	views['match-display'].write(context.res, {
 		match: match.data,
-		started: started
+		currentPointA: formatPoint(match.data['current-point-a']),
+		currentPointB: formatPoint(match.data['current-point-b']),
+		subtitle: subtitle
 	});
+}
+
+var handleMatchJudge = function(context) {
+	var match = getMatchData(context);
+	if (!match) return;
+
+	var req = context.req;
+	if (req.method === 'GET') {
+		views['match-judge'].write(context.res, {
+			errors: {},
+			params: {},
+			match: match.data,
+			matches: buildActiveMatches()
+		});
+		return;
+	}
+
+	var errors = {};
+	var params = context.params;
+	var serve = params['serve'];
+	if (serve === undefined || !(serve === 'a' || serve === 'b') ) {
+		errors['serve'] = true;
+	}
+	if (Object.keys(errors).length > 0) {
+		views['match-judge'].write(context.res, {
+			errors: errors,
+			params: params,
+			match: match.data,
+			matches: buildActiveMatches()
+		});
+		return;
+	}
+	match.data['serve'] = params['serve'];
+	match.data['current-serve'] = params['serve'];
+	match.data['status'] = params['ongoing'];
+	match.data['started'] = (new Date()).getTime();
+	match.save();
+	redirect302(context.res, '/match/judge/' + match.data.id + '/');
 }
 
 // mapping
 var mapping = {
 	'/': {controller: handleIndex},
-	'/match/new/': {controller: handleMatchNew}
+	'/match/new/': {controller: handleMatchNew},
 };
 var mappingStartsWith = {
 	'/match/display/': {controller: handleMatchDisplay},
+	'/match/judge/': {controller: handleMatchJudge},
 }
 
 // utils
@@ -314,7 +372,7 @@ var buildActiveMatches = function() {
 	return actives;
 }
 
-// create server
+// create http server
 require('http').createServer(function(req, res) {
 	var path = req.url.split('?')[0];
 	var buildContext = function() {
@@ -365,7 +423,12 @@ require('http').createServer(function(req, res) {
 			handleRequest();
 		});
 	}
-}).listen(PORT);
+}).listen(HTTP_PORT);
+
+// create ws server
+require('websocket.io').listen(WS_PORT).on('connection', function(socked) {
+
+});
 
 // Let's start!
 log('Open urls listed below in your browser.');
@@ -382,6 +445,6 @@ log('Open urls listed below in your browser.');
 	}
 	return results;
 })().forEach(function(ip) {
-	log('http://' + ip + (PORT != 80 ? ':' + PORT : '') + '/');
+	log('http://' + ip + (HTTP_PORT != 80 ? ':' + HTTP_PORT : '') + '/');
 });
 log('Ctrl+C to stop this server.')

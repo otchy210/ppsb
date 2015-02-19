@@ -52,7 +52,7 @@ body.match footer a {
 	100% {color: #333;}
 }
 body.match header h1 small.waiting,
-body.match footer a {
+body.match footer a.waiting {
 	-webkit-animation: waiting 2s infinite;
 	animation: waiting 2s infinite;
 }
@@ -109,10 +109,6 @@ body.match footer a {
 	font-family: monospace;
 	color: #0c0;
 	line-height: 240px;
-	opacity: 0.2;
-}
-.board .current-game.visible {
-	opacity: 1;
 }
 .board .fixed-score {
 	font-size: 50px;

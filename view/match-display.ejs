@@ -5,7 +5,7 @@
 <header class="container-fluid">
 	<div class="row">
 		<div class="col-xs-12">
-			<h1><%= match.title %> <small<% if (match.status === 'pending') { %> class="waiting"<% } %>><%= started %></small></h1>
+			<h1><%= match.title %> <small<% if (match.status === 'pending') { %> class="waiting"<% } %>><%= subtitle %></small></h1>
 		</div>
 	</div>
 </header>
@@ -13,18 +13,18 @@
 	<div class="row">
 		<div class="col-xs-4 player">
 			<h2><%= match['player-a'] %></h2>
-			<div class="score"><span class="dark">0</span>0</div>
+			<div class="score"><%- currentPointA %></div>
 		</div>
 		<div class="col-xs-4 game">
 			<div>
-				<span class="serve left"></span>
-				<span class="current-game<% if (match.status !== 'pending') {%> visible<% } %>"><%= match['current-game'] %></span>
-				<span class="serve right"></span>
+				<span class="serve left<% if (match['current-serve'] === 'a' ) { %> visible<% } %>"></span>
+				<span class="current-game"><%= match['current-game'] %></span>
+				<span class="serve right<% if (match['current-serve'] === 'b' ) { %> visible<% } %>"></span>
 			</div>
 		</div>
 		<div class="col-xs-4 player">
 			<h2><%= match['player-b'] %></h2>
-			<div class="score"><span class="dark">0</span>0</div>
+			<div class="score"><%- currentPointB %></div>
 		</div>
 	</div>
 	<% for (var i=0; i<(match.game*2-1); i++) { %>
@@ -47,11 +47,13 @@
 </article>
 <footer class="footer">
 	<div class="container-fluid">
-		<a href="/match/judge/<%= match.id %>"<% if (match.status === 'pending') { %> class="waiting"<% } %>>I wanna be a judge of this match.</a>
+		<a href="/match/judge/<%= match.id %>/"<% if (match.status === 'pending') { %> class="waiting"<% } %>>I wanna be a judge of this match.</a>
 	</div>
 </footer>
 
 <%- include('commonjs.ejs') %>
+<script>
+</script>
 
 </body>
 </html>

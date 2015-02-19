@@ -21,7 +21,7 @@ OR
 THEN
 
 	$ npm install ejs
-	$ npm install websocket
+	$ npm install websocket.io
 
 ## How to run the server
 
