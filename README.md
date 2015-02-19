@@ -9,12 +9,12 @@ Just do it.
 
 ### Install ping pong scoreboard
 
-	$ git clone https://github.com/Otchy210/ppsb.git
+	$ git clone git@github.com:otchy210/ppsb.git
 	$ cd ./ppsb/
 
 OR
 
-	$ wget https://github.com/Otchy210/ppsb/archive/master.zip
+	$ wget https://github.com/otchy210/ppsb/archive/master.zip
 	$ unzip master.zip
 	$ cd ./ppsb-master
 
