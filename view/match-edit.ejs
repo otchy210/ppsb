@@ -1,4 +1,5 @@
 <%- include('header.ejs') %>
+<%- include('nav.ejs') %>
 
 <div class="container">
 	<div class="page-header">
@@ -79,7 +80,6 @@ var players = new Bloodhound({
 	local: $.map(PLAYERS, function(name) { return {name: name}; })
 });
 players.initialize();
-
 $('.player').typeahead({
 	hint: true,
 	highlight: true,
@@ -89,6 +89,5 @@ $('.player').typeahead({
 	displayKey: 'name',
 	source: players.ttAdapter()
 });
-console.log(players);
 </script>
 <%- include('footer.ejs') %>

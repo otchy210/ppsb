@@ -33,6 +33,10 @@ var debug = (function() {
 	}
 })();
 
+String.prototype.startsWith = function (str){
+	return this.indexOf(str) == 0;
+};
+
 String.prototype.endsWith = function(suffix) {
 	return this.indexOf(suffix, this.length - suffix.length) !== -1;
 };
@@ -127,6 +131,9 @@ var JsonFile = function(path, defaultData) {
 			if (err) throw err;
 			debug('Save to ' + self.path);
 		});
+	};
+	self.hasData = function() {
+		return !!self.data;
 	};
 }
 
@@ -250,7 +257,18 @@ var handleMatchNew = function(context) {
 }
 
 var handleMatchDisplay = function(context) {
-
+	var paths = context.paths;
+	if (paths.length !== 3 || !isValidInt(paths[2])) {
+		error404(context.res);
+		return;
+	}
+	var id = paths[2];
+	var match = new JsonFile('match/' + id);
+	if (!match.hasData()) {
+		error404(context.res);
+		return;
+	}
+	views['match-display'].write(context.res);
 }
 
 // mapping
@@ -258,6 +276,9 @@ var mapping = {
 	'/': {controller: handleIndex},
 	'/match/new/': {controller: handleMatchNew}
 };
+var mappingStartsWith = {
+	'/match/display/': {controller: handleMatchDisplay},
+}
 
 // utils
 var buildActiveMatches = function() {
@@ -275,26 +296,34 @@ var buildActiveMatches = function() {
 // create server
 require('http').createServer(function(req, res) {
 	var path = req.url.split('?')[0];
+	var buildContext = function() {
+		return {
+			req: req,
+			res: res,
+			path: path,
+			paths: path.split('/').filter(function(item) {return item.length > 0;}),
+			params: req.params
+		};
+	};
 	var handleRequest = function() {
 		log(req.method, path);
 		if (mapping[path]) {
-			var context = {
-				req: req,
-				res: res,
-				path: path,
-				paths: path.split('/').filter(function(item) {return item.length > 0;}),
-				params: req.params
-			};
-			mapping[path].controller(context);
+			mapping[path].controller(buildContext());
 		} else if (isStatic(path)) {
-			var context = {
-				req: req,
-				res: res,
-				path: path
-			};
-			handleStatic(context);
+			handleStatic(buildContext());
 		} else {
-			error404(res);
+			var found = false;
+			for (var k in mappingStartsWith) {
+				debug(k, path, path.startsWith(k));
+				if (path.startsWith(k)) {
+					mappingStartsWith[k].controller(buildContext());
+					found = true;
+					break;
+				}
+			}
+			if (!found) {
+				error404(res);
+			}
 		}
 	};
 	if (req.method == 'GET') {
