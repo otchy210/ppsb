@@ -34,7 +34,7 @@
 			<div class="score" data-player="a" id="current-point-a"><%= match['current-point-a'] %></div>
 		</div>
 		<div class="col-xs-2 current-game">
-			<h3>Game</h3>
+			<h3>&nbsp;</h3>
 			<div id="current-game"><%= match['current-game'] %></div>
 		</div>
 		<div class="col-xs-5 player">
@@ -52,7 +52,7 @@
 			<div><%= match['player-a'] %></div>
 		</div>
 		<% for (var i=0; i<(match.game*2-1); i++) { %>
-		<div class="col-xs-1">
+		<div class="col-xs-1 fixed-score-wrapper">
 			<div class="fixed-score<% if (match.result.length > i && match.result[i].won === 'a') { %> won<% } %>" id="fixed-score-a-<%= i %>">
 				<% if (match.result.length > i) { %><%= match.result[i].scores[0] %><% } else { %>0<% } %>
 			</div>
@@ -64,7 +64,7 @@
 			<div><%= match['player-b'] %></div>
 		</div>
 		<% for (var i=0; i<(match.game*2-1); i++) { %>
-		<div class="col-xs-1">
+		<div class="col-xs-1 fixed-score-wrapper">
 			<div class="fixed-score<% if (match.result.length > i && match.result[i].won === 'b') { %> won<% } %>" id="fixed-score-b-<%= i %>">
 				<% if (match.result.length > i) { %><%= match.result[i].scores[1] %><% } else { %>0<% } %>
 			</div>

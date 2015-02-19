@@ -144,15 +144,40 @@ var JsonFile = function(path, defaultData) {
 
 // utils
 var buildActiveMatches = function() {
-	var matches = new JsonFile('match/list', []);
+	var list = new JsonFile('match/list', []);
 	var actives = [];
-	for (var i = matches.data.length - 1; i >= 0; i--) {
-		var match = matches.data[i];
-		if (match.status == undefined || match.status == 'pending') {
+	for (var i = list.data.length - 1; i >= 0; i--) {
+		var match = list.data[i];
+		if (match.status === undefined) {
 			actives.push(match);
 		}
 	}
 	return actives;
+}
+
+var updateMatchList = function(match) {
+	var data = match.data;
+	var index = data.id - 1;
+	var list = new JsonFile('match/list', []);
+	if (list.data.length <= index) {
+		return;
+	}
+	debug(list.data, index, list.data[index]);
+	var item = list.data[index];
+	switch (data.status) {
+		case 'finished':
+		case 'cancelled':
+			item['status'] = data.status;
+			break;
+		default :
+			delete item['status'];
+	}
+	if (!isEmpty(data.won)) {
+		item['won'] = data.won;
+	} else {
+		delete item['won'];
+	}
+	list.save();
 }
 
 var buildWsUri = function(req) {
@@ -414,7 +439,7 @@ var getCurrentServe = function(data) {
 
 var handleAddPoint = function(player, match, matchStats) {
 	var data = match.data;
-	if (data.status === 'finished') {
+	if (data.status === 'finished' || data.status === 'cancelled') {
 		return match;
 	}
 	var stats = matchStats[data.id];
@@ -458,6 +483,7 @@ var handleAddPoint = function(player, match, matchStats) {
 		data['current-point-a'] = data.result[data.result.length - 1].scores[0];
 		data['current-point-b'] = data.result[data.result.length - 1].scores[1];
 		data['current-game'] -= 1;
+		updateMatchList(match);
 	}
 	data['current-serve'] = getCurrentServe(data);
 	match.save();
@@ -465,15 +491,20 @@ var handleAddPoint = function(player, match, matchStats) {
 }
 
 var handleUndo = function(match, matchStats) {
-	var stats = matchStats[match.data.id];
+	var data = match.data;
+	var stats = matchStats[data.id];
 	if (!stats || stats.length == 0) {
 		return match;
 	}
+	var needsToUpdateList = (data.status === 'finished' || data.status === 'cancelled');
 	var prevStats = stats.pop();
 	for (var k in prevStats) {
-		match.data[k] = prevStats[k];
+		data[k] = prevStats[k];
 	}
-	match.data['current-serve'] = getCurrentServe(match.data);
+	data['current-serve'] = getCurrentServe(data);
+	if (needsToUpdateList) {
+		updateMatchList(match);
+	}
 	match.save();
 	return match;
 }
