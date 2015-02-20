@@ -1,7 +1,7 @@
 // globals
 var HTTP_PORT = 10080;
 var WS_PORT = 10088;
-var DEBUG = true;
+var DEBUG = false;
 var VIEW_DIR = './view/'
 var STATIC_DIR = './static/'
 var DATA_DIR = './.data/'
@@ -58,7 +58,7 @@ var isValidPlayer = function(str) {
 	return str.match(/^[a-zA-Z0-9_-]+$/);
 }
 
-var common = require('./static/js/common.js');
+var common = require('./static/js/common.js');	// shared with browser
 
 // http response
 var return200 = function(res, text, type) {
@@ -148,7 +148,7 @@ var buildActiveMatches = function() {
 	var actives = [];
 	for (var i = list.data.length - 1; i >= 0; i--) {
 		var match = list.data[i];
-		if (match.status === undefined) {
+		if (match.status === undefined || match.status === 'ongoing') {
 			actives.push(match);
 		}
 	}
@@ -163,13 +163,10 @@ var updateMatchList = function(match) {
 		return;
 	}
 	var item = list.data[index];
-	switch (data.status) {
-		case 'finished':
-		case 'cancelled':
-			item['status'] = data.status;
-			break;
-		default :
-			delete item['status'];
+	if (data.status) {
+		item['status'] = data.status;
+	} else {
+		delete item['status'];
 	}
 	if (!isEmpty(data.won)) {
 		item['won'] = data.won;
@@ -217,8 +214,16 @@ var handleStatic = function(context) {
 }
 
 var handleIndex = function(context) {
+	var matchesList = new JsonFile('match/list', []);
+	matchesList = matchesList.data.reverse().slice(0, 10).map(
+		function(item) {
+			item['created-str'] = common.formatDate(new Date(item['created']));
+			return item;
+		}
+	);
 	views['index'].write(context.res, {
-		matches: buildActiveMatches()
+		matches: buildActiveMatches(),
+		matchesList: matchesList
 	});
 }
 
@@ -271,14 +276,20 @@ var handleMatchNew = function(context) {
 		game: parseInt(params['game']),
 		'player-a': aName,
 		'player-b': bName,
-		'created': (new Date()).getTime(),
+		created: (new Date()).getTime(),
 		result: [],
 		'current-game': 1,
 		'current-point-a': 0,
 		'current-point-b': 0,
 		status: 'pending'
 	};
-	matches.data.push({id: match.id, title: match.title});
+	matches.data.push({
+		id: match.id,
+		title: match.title,
+		'player-a': aName,
+		'player-b': bName,
+		created: match.created
+	});
 	matches.save();
 	(new JsonFile('match/' + match.id, match)).save();
 
@@ -388,6 +399,7 @@ var handleMatchJudge = function(context) {
 	match.data['current-serve'] = params['serve'];
 	match.data['status'] = 'ongoing';
 	match.data['started'] = (new Date()).getTime();
+	updateMatchList(match);
 	match.save();
 
 	wsServer.clients.forEach(function(client) {

@@ -4,6 +4,32 @@
 
 <%- include('nav.ejs') %>
 
+<div class="container">
+	<div class="page-header">
+		<h2>Recent matches</h2>
+	</div>
+	<table class="table table-striped">
+		<tr>
+			<th>Title</th>
+			<th>Player A</th>
+			<th>Player B</th>
+			<th>Created at</th>
+			<th>Status</th>
+			<th></th>
+		</tr>
+		<% for (var i=0; i<matchesList.length; i++) { %>
+		<tr><% var m = matchesList[i]; %>
+			<td><%= m.title %></td>
+			<td><%= m['player-a'] %></td>
+			<td><%= m['player-b'] %></td>
+			<td><%= m['created-str'] %></td>
+			<td><%= m.status %></td>
+			<td><a href="/match/display/<%= m.id %>/">Open scoreboard</a></td>
+		</tr>
+		<% } %>
+	</table>
+</div>
+
 <%- include('commonjs.ejs') %>
 
 </body>
