@@ -1,0 +1,41 @@
+<%- include('header.ejs') %>
+
+<body>
+
+<%- include('nav.ejs') %>
+
+<div class="container">
+	<div class="page-header">
+		<h2>All matches</h2>
+	</div>
+	<%- include('matches-table.ejs') %>
+	<div class="row">
+		<div class="col-xs-12">
+			<ul class="pagination">
+				<li<% if (currentIndex === 0) {%> class="disabled"<% } %>>
+					<a href="/match/list/<% if (currentIndex > 1) { %>?index=<%= currentIndex - 1 %><% } %>" aria-label="Previous">
+						<span aria-hidden="true">&laquo;</span>
+					</a>
+				</li>
+				<% for (var i=0; i<=maxIndex; i++) {%>
+				<li<% if (currentIndex === i) {%> class="active"<% }%>>
+					<a href="/match/list/<% if (i !== 0) { %>?index=<%= i %><% } %>">
+						<%= (i+1) %>
+					</a>
+				</li>
+				<% } %>
+				<li<% if (currentIndex === maxIndex) {%> class="disabled"<% } %>>
+					<a href="/match/list/<% if (maxIndex > 0 && currentIndex !== maxIndex) { %>?index=<%= currentIndex + 1 %><% } %>" aria-label="Next">
+						<span aria-hidden="true">&raquo;</span>
+					</a>
+				</li>
+			</ul>
+		</div>
+	</div>
+
+</div>
+
+<%- include('commonjs.ejs') %>
+
+</body>
+</html>

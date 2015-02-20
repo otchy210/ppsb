@@ -1,7 +1,7 @@
 // globals
 var HTTP_PORT = 10080;
 var WS_PORT = 10088;
-var DEBUG = false;
+var DEBUG = true;
 var VIEW_DIR = './view/'
 var STATIC_DIR = './static/'
 var DATA_DIR = './.data/'
@@ -224,6 +224,31 @@ var handleIndex = function(context) {
 	views['index'].write(context.res, {
 		matches: buildActiveMatches(),
 		matchesList: matchesList
+	});
+}
+
+var handleMatchList = function(context) {
+	var matchesList = new JsonFile('match/list', []);
+	var machesTotal = matchesList.data.length
+	var index = !context.params['index'] ? 0 : parseInt(context.params['index']);
+	matchesList = matchesList.data.reverse().slice(index * 20, index * 20 + 20).map(
+		function(item) {
+			item['created-str'] = common.formatDate(new Date(item['created']));
+			return item;
+		}
+	);
+	views['match-list'].write(context.res, {
+		matches: buildActiveMatches(),
+		matchesList: matchesList,
+		matchesTotal: machesTotal,
+		currentIndex: index,
+		maxIndex: Math.floor(machesTotal / 20)
+	});
+}
+
+var handlePlayerList = function(context) {
+	views['player-list'].write(context.res, {
+		matches: buildActiveMatches()
 	});
 }
 
@@ -546,6 +571,8 @@ var handleCancel = function(match, matchStats) {
 var mapping = {
 	'/': {controller: handleIndex},
 	'/match/new/': {controller: handleMatchNew},
+	'/match/list/': {controller: handleMatchList},
+	'/player/list/': {controller: handlePlayerList},
 };
 var mappingStartsWith = {
 	'/match/display/': {controller: handleMatchDisplay},
@@ -588,6 +615,8 @@ require('http').createServer(function(req, res) {
 		var index = req.url.indexOf('?');
 		if (index >= 0) {
 			req.params = qs.parse(req.url.substr(index + 1));
+		} else {
+			req.params = {};
 		}
 		handleRequest();
 	} else if (req.method == 'POST') {
