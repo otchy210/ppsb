@@ -1,6 +1,10 @@
 # Ping pong scoreboard
 Ping pong scoreboard working with node.js
 
+## Introduction movie
+
+[![](http://img.youtube.com/vi/ggMUWVfPPJQ/0.jpg)](https://www.youtube.com/watch?v=ggMUWVfPPJQ)
+
 ## How to install
 
 ### Install node.js
